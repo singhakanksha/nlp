@@ -1,6 +1,7 @@
 package nlp;
 
 
+import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.ling.HasWord;
 import edu.stanford.nlp.pipeline.Annotation;
 import edu.stanford.nlp.pipeline.StanfordCoreNLP;
@@ -17,12 +18,78 @@ import opennlp.tools.util.InvalidFormatException;
 import opennlp.tools.util.Span;
 
 import java.io.*;
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Properties;
+import java.text.BreakIterator;
+import java.util.*;
 
 public class App {
+
+    public static void scanner(){
+        Scanner scanner = new Scanner("Let's pause, and then "+ " reflect.");
+        //regular expression that matches those three characters
+        scanner.useDelimiter("[ ,.]");
+        List<String> list = new ArrayList<String>();
+        while(scanner.hasNext()) {
+            String token = scanner.next();
+            list.add(token);
+        }
+        for(String token : list) {
+            System.out.println(token);
+        }
+
+
+
+        String text = "Mr. Smith went to 123 Washington avenue.";
+        String tokens[] = text.split("\\s+");
+        for (String token : tokens) {
+            System.out.println(token);
+        }
+    }
+
+
+    public  static void breakiterator(){
+        BreakIterator wordIterator = BreakIterator.getWordInstance();
+        String text = "Let's pause, and then reflect.";
+        wordIterator.setText(text);
+        int boundary = wordIterator.first();
+        while (boundary != BreakIterator.DONE) {
+            int begin = boundary;
+            System.out.print(boundary + "-");
+            boundary = wordIterator.next();
+            int end = boundary;
+            if(end == BreakIterator.DONE) break;
+            System.out.println(boundary + " ["
+                    + text.substring(begin, end) + "]");
+        }
+    }
+
+    public static void streamtokenizer(){
+        try {
+            StreamTokenizer tokenizer = new StreamTokenizer(
+                    new StringReader("Let's pause, and then reflect."));
+            boolean isEOF = false;
+            while (!isEOF) {
+                int token = tokenizer.nextToken();
+                switch (token) {
+                    case StreamTokenizer.TT_EOF:
+                        isEOF = true;
+                        break;
+                    case StreamTokenizer.TT_EOL:
+                        break;
+                    case StreamTokenizer.TT_WORD:
+                        System.out.println(tokenizer.sval);
+                        break;
+                    case StreamTokenizer.TT_NUMBER:
+                        System.out.println(tokenizer.nval);
+                        break;
+                    default:
+                        System.out.println((char) token);
+                }
+            }
+        } catch (IOException ex) {
+            // Handle the exception
+        }
+    }
+
 
     public static void TokenizeOPENNLP() throws InvalidFormatException, IOException {
         InputStream is = new FileInputStream("src/main/resources/en-token.bin");
@@ -38,6 +105,7 @@ public class App {
 
         is.close();
     }
+
 
     public static void FindPeopleAndThings() throws IOException {
 
@@ -116,6 +184,50 @@ public class App {
         pipeline.prettyPrint(annotation, System.out);
     }
 
+// STANFORD tokenization ways
+    public static void ptbtokenizer(){
+         String paragraph = "Let's pause, \nand then " + "reflect.";
+        PTBTokenizer ptbSimple = new PTBTokenizer(
+                new StringReader(paragraph), new CoreLabelTokenFactory(),null);
+        while (ptbSimple.hasNext()) {
+            System.out.println(ptbSimple.next());
+        }
+
+
+        CoreLabelTokenFactory ctf = new CoreLabelTokenFactory();
+        PTBTokenizer ptbWithOption = new PTBTokenizer(
+                new StringReader(paragraph),ctf,"invertible=true");
+        while (ptbWithOption.hasNext()) {
+            CoreLabel cl = (CoreLabel)ptbWithOption.next();
+            System.out.println(cl.originalText() + " (" +
+                    cl.beginPosition() + "-" + cl.endPosition() + ")");
+        }
+    }
+
+
+    public static void docPreprocessr(){
+        String paragraph = "Let's pause, \nand then " + "reflect.";
+        Reader reader = new StringReader(paragraph);
+        DocumentPreprocessor documentPreprocessor =
+                new DocumentPreprocessor(reader);
+        Iterator<List<HasWord>> it = documentPreprocessor.iterator();
+        while (it.hasNext()) {
+            List<HasWord> sentence = it.next();
+            for (HasWord token : sentence) {
+                System.out.println(token);
+            }
+        }
+    }
+
+    public static void usePipeline(){
+        String paragraph = "Let's pause, \nand then " + "reflect.";
+        Properties properties = new Properties();
+        properties.put("annotators", "tokenize, ssplit");
+        StanfordCoreNLP pipeline = new StanfordCoreNLP(properties);
+        Annotation annotation = new Annotation(paragraph);
+        pipeline.annotate(annotation);
+        pipeline.prettyPrint(annotation, System.out);
+    }
 
     public static void main(String[] args) throws InvalidFormatException, IOException {
 
@@ -124,7 +236,13 @@ public class App {
 //        TokenizeStanfordWay();
 //        FindPeopleAndThings();
 //        taggingPos();
-        extractRelationship();
+     //   extractRelationship();
+       // scanner();
+      //  breakiterator();
+      //  streamtokenizer();
+     //   ptbtokenizer();
+//        docPreprocessr();
+        usePipeline();
     }
 
 }
