@@ -16,26 +16,28 @@ import opennlp.tools.postag.POSTaggerME;
 import opennlp.tools.tokenize.*;
 import opennlp.tools.util.InvalidFormatException;
 import opennlp.tools.util.Span;
+import sentiment.SentimentAnalyzer;
 
 import java.io.*;
 import java.text.BreakIterator;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class App {
 
-    public static void scanner(){
-        Scanner scanner = new Scanner("Let's pause, and then "+ " reflect.");
+    public static void scanner() {
+        Scanner scanner = new Scanner("Let's pause, and then " + " reflect.");
         //regular expression that matches those three characters
         scanner.useDelimiter("[ ,.]");
         List<String> list = new ArrayList<String>();
-        while(scanner.hasNext()) {
+        while (scanner.hasNext()) {
             String token = scanner.next();
             list.add(token);
         }
-        for(String token : list) {
+        for (String token : list) {
             System.out.println(token);
         }
-
 
 
         String text = "Mr. Smith went to 123 Washington avenue.";
@@ -46,7 +48,7 @@ public class App {
     }
 
 
-    public  static void breakiterator(){
+    public static void breakiterator() {
         BreakIterator wordIterator = BreakIterator.getWordInstance();
         String text = "Let's pause, and then reflect.";
         wordIterator.setText(text);
@@ -56,13 +58,13 @@ public class App {
             System.out.print(boundary + "-");
             boundary = wordIterator.next();
             int end = boundary;
-            if(end == BreakIterator.DONE) break;
+            if (end == BreakIterator.DONE) break;
             System.out.println(boundary + " ["
                     + text.substring(begin, end) + "]");
         }
     }
 
-    public static void streamtokenizer(){
+    public static void streamtokenizer() {
         try {
             StreamTokenizer tokenizer = new StreamTokenizer(
                     new StringReader("Let's pause, and then reflect."));
@@ -110,7 +112,7 @@ public class App {
     public static void FindPeopleAndThings() throws IOException {
 
         try {
-            String[] sentences = { "Tim was a good neighbor. Perhaps not as good a Bob " +
+            String[] sentences = {"Tim was a good neighbor. Perhaps not as good a Bob " +
                     "Haywood, but still pretty good. Of course Mr. Adam " +
                     "took the cake!"};
             // Insert code to find the names here
@@ -131,23 +133,26 @@ public class App {
 
     }
 
-    public static void taggingPos(){
+    public static void taggingPos() {
+        List list = new ArrayList();
+        list.add("pug");
+        list.add("meow");
+        list.add("squirrel");
         POSModel model = new POSModelLoader().load(
                 new File("src/main/resources/en-pos-maxent.bin"));
         POSTaggerME tagger = new POSTaggerME(model);
-        String sentence = "POS processing is useful for enhancing the "
-                + "quality of data sent to other elements of a pipeline.";
+        String sentence = "please meow me and squirrel me ";
         String tokens[] = WhitespaceTokenizer.INSTANCE.tokenize(sentence);
         String[] tags = tagger.tag(tokens);
-        for(int i=0; i<tokens.length; i++) {
-            System.out.print(tokens[i] + "[" + tags[i] + "] ");
+        for (int i = 0; i < tokens.length; i++) {
+            if (tags[i].equals("VB") && list.contains(tokens[i])) {
+                System.out.println(tokens[i]);//+ "[" + tags[i] + "] ");
+            }
         }
     }
 
 
-
-
-    public static void TokenizeStanfordWay(){
+    public static void TokenizeStanfordWay() {
         PTBTokenizer ptb = new PTBTokenizer(
                 new StringReader("He lives at 1511 W. Randolph."),
                 new CoreLabelTokenFactory(), null);
@@ -174,7 +179,7 @@ public class App {
         }
     }
 
-    public static void extractRelationship(){
+    public static void extractRelationship() {
         Properties properties = new Properties();
         properties.put("annotators", "tokenize, ssplit, parse");
         StanfordCoreNLP pipeline = new StanfordCoreNLP(properties);
@@ -184,11 +189,11 @@ public class App {
         pipeline.prettyPrint(annotation, System.out);
     }
 
-// STANFORD tokenization ways
-    public static void ptbtokenizer(){
-         String paragraph = "Let's pause, \nand then " + "reflect.";
+    // STANFORD tokenization ways
+    public static void ptbtokenizer() {
+        String paragraph = "Let's pause, \nand then " + "reflect.";
         PTBTokenizer ptbSimple = new PTBTokenizer(
-                new StringReader(paragraph), new CoreLabelTokenFactory(),null);
+                new StringReader(paragraph), new CoreLabelTokenFactory(), null);
         while (ptbSimple.hasNext()) {
             System.out.println(ptbSimple.next());
         }
@@ -196,16 +201,16 @@ public class App {
 
         CoreLabelTokenFactory ctf = new CoreLabelTokenFactory();
         PTBTokenizer ptbWithOption = new PTBTokenizer(
-                new StringReader(paragraph),ctf,"invertible=true");
+                new StringReader(paragraph), ctf, "invertible=true");
         while (ptbWithOption.hasNext()) {
-            CoreLabel cl = (CoreLabel)ptbWithOption.next();
+            CoreLabel cl = (CoreLabel) ptbWithOption.next();
             System.out.println(cl.originalText() + " (" +
                     cl.beginPosition() + "-" + cl.endPosition() + ")");
         }
     }
 
 
-    public static void docPreprocessr(){
+    public static void docPreprocessr() {
         String paragraph = "Let's pause, \nand then " + "reflect.";
         Reader reader = new StringReader(paragraph);
         DocumentPreprocessor documentPreprocessor =
@@ -219,7 +224,7 @@ public class App {
         }
     }
 
-    public static void usePipeline(){
+    public static void usePipeline() {
         String paragraph = "Let's pause, \nand then " + "reflect.";
         Properties properties = new Properties();
         properties.put("annotators", "tokenize, ssplit");
@@ -229,20 +234,60 @@ public class App {
         pipeline.prettyPrint(annotation, System.out);
     }
 
+
+    public static String matchMyInput(String str){
+        String reply = "";
+        String regex = "^\\s*hi\\s*[a-z]*\\s*|\\s*hello\\s*[a-z]*\\s*|\\s*hey\\s*[a-z]*\\s*$";
+        String regex2 = "^\\s*.*good\\s*[a-z]*\\s*|\\s*.*bad\\s*[a-z]*\\s*|\\s*.*awesome\\s*[a-z]*\\s*|\\s*[a-z]\\s*.*[a-z]*\\s*|\\s*.*not\\s*[a-z]*\\s*$";
+        Pattern pattern = Pattern.compile(regex);
+        Pattern pattern1 = Pattern.compile(regex2);
+        Matcher m1 = pattern.matcher(str.toLowerCase());
+        Matcher m2 = pattern1.matcher(str.toLowerCase());
+        if (m1.matches()) {
+            reply  = "Hi, I am doing great. How are you today ?";
+        }else if(m2.matches()){
+            reply  = new SentimentAnalyzer().findSentiment(str);
+        }else{
+            reply  = "Sorry meredith didn't understand ";
+        }
+        return reply ;
+    }
+
+
+    public static String extractWhatIneed(String str){
+        String reply = "";
+        String regex ="\\bmetrics\\b(.*?)\\bfrom\\b(.*?)\\bin\\b(.*?)\\bas\\b(.*?)";
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(str.toLowerCase());
+        if (matcher.matches()) {
+            reply  = matcher.group(1).toString() + "--" + matcher.group(2).toString() + "--" + matcher.group(3).toString() + "--" + matcher.group(4).toString() ;
+        }else
+        {
+            reply  = "sorry could not match";
+        }
+        return reply;
+    }
+
+
     public static void main(String[] args) throws InvalidFormatException, IOException {
 
-      //  System.out.println("Hello World!");
+        //  System.out.println("Hello World!");
 //        TokenizeOPENNLP();
-//        TokenizeStanfordWay();
+        //   TokenizeStanfordWay();
 //        FindPeopleAndThings();
-//        taggingPos();
-     //   extractRelationship();
-       // scanner();
-      //  breakiterator();
-      //  streamtokenizer();
-     //   ptbtokenizer();
+    //    taggingPos();
+        //   extractRelationship();
+        // scanner();
+        //  breakiterator();
+        //  streamtokenizer();
+        //   ptbtokenizer();
 //        docPreprocessr();
-        usePipeline();
+        //  usePipeline();
+
+//        System.out.println(matchMyInput("hey sweetheart"));
+//        System.out.println(matchMyInput("feeling awesome"));
+
+        System.out.println(extractWhatIneed("abc yzz from iop in xxxx as ra"));
     }
 
 }
